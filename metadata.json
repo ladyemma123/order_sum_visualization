@@ -1,0 +1,6 @@
+{
+  "name": "RPA 工单数据可视化看板",
+  "description": "看板风格的 RPA 工单数据可视化管理系统，支持多维度的图表切换、实时数据更新、交互式数据编辑与加载，以及由 Gemini 支持的智能分析建议。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
