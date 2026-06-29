@@ -20,11 +20,12 @@ export default function DashboardOverview({
   const activeTickets = tickets.filter((t) => t.total_count > 0);
   const enterpriseCount = activeTickets.length;
   const totalInboundCount = tickets.reduce((sum, t) => sum + t.total_count, 0);
+  const manualCount = tickets.reduce((sum, t) => sum + (Number(t.manual_count) || 0), 0);
   const resolvedCount = tickets.reduce((sum, t) => sum + t.resolved_count, 0);
   const warningCount = tickets.filter((t) => t.total_count >= 10).length;
 
   const averageInbound = enterpriseCount > 0 ? (totalInboundCount / 6).toFixed(1) : "0"; // 6-day cycle in standard cycle
-  const resolutionRate = totalInboundCount > 0 ? ((resolvedCount / totalInboundCount) * 100).toFixed(1) : "0";
+  const resolutionRate = totalInboundCount > 0 ? ((manualCount / totalInboundCount) * 100).toFixed(1) : "0";
 
   // Pre-calculate Warning list (sorted descending by total_count, filters total_count >= 10)
   const warningEnterprises = [...tickets]
@@ -120,7 +121,7 @@ export default function DashboardOverview({
             </div>
           </div>
           <div className="flex items-baseline space-x-1">
-            <span className="text-4xl font-extrabold text-slate-800 tracking-tight">{resolvedCount}</span>
+            <span className="text-4xl font-extrabold text-slate-800 tracking-tight">{manualCount}</span>
             <span className="text-slate-400 text-sm font-medium">次</span>
           </div>
           <p className="text-gray-400 text-xs mt-3 flex items-center justify-between border-t border-gray-50 pt-3">
@@ -285,9 +286,9 @@ export default function DashboardOverview({
 
           {/* Radial Pie Graph */}
           {(() => {
-            const aiInterceptCount = Math.max(0, totalInboundCount - resolvedCount);
-            const resolvedPct = totalInboundCount > 0 ? (resolvedCount / totalInboundCount) * 100 : 0;
-            const aiPct = totalInboundCount > 0 ? (aiInterceptCount / totalInboundCount) * 100 : 0;
+            const autoClosedCount = Math.max(0, totalInboundCount - manualCount);
+            const resolvedPct = totalInboundCount > 0 ? (manualCount / totalInboundCount) * 100 : 0;
+            const aiPct = totalInboundCount > 0 ? (autoClosedCount / totalInboundCount) * 100 : 0;
 
             const pieRadius = 50;
             const pieCircumference = 2 * Math.PI * pieRadius; // ~314.15
@@ -360,7 +361,7 @@ export default function DashboardOverview({
                         <span className="text-slate-600 font-semibold">自动闭环</span>
                       </div>
                       <div className="font-mono text-slate-800 font-bold">
-                        {aiInterceptCount}次 <span className="text-indigo-500 font-normal ml-1">({aiPct.toFixed(1)}%)</span>
+                      {autoClosedCount}次 <span className="text-indigo-500 font-normal ml-1">({aiPct.toFixed(1)}%)</span>
                       </div>
                     </div>
                 </div>
