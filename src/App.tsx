@@ -8,17 +8,19 @@ import { motion, AnimatePresence } from "motion/react";
 
 const weekCycles: DateCycle[] = [
   { label: "2026.05.18 ~ 2026.05.24", startDate: "2026-05-18", endDate: "2026-05-24" },
-  { label: "2026.05.25 ~ 2026.05.30", startDate: "2026-05-25", endDate: "2026-05-30" },
+  { label: "2026.05.25 ~ 2026.05.31", startDate: "2026-05-25", endDate: "2026-05-31" },
+  { label: "2026.06.01 ~ 2026.06.08", startDate: "2026-06-01", endDate: "2026-06-08" },
 ];
 
 const monthCycles: DateCycle[] = [
   { label: "2026.05.01 ~ 2026.05.31", startDate: "2026-05-01", endDate: "2026-05-31" },
+  { label: "2026.06.01 ~ 2026.06.30", startDate: "2026-06-01", endDate: "2026-06-30" },
 ];
 
 export default function App() {
   const [selectedTab, setSelectedTab] = useState<string>("总览");
   const [periodMode, setPeriodMode] = useState<"week" | "month">("week");
-  const [currentWeekIndex, setCurrentWeekIndex] = useState<number>(1); // Defaults to May 25-30
+  const [currentWeekIndex, setCurrentWeekIndex] = useState<number>(0); // Defaults to May 18-24
   const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(0); // Defaults to May Month
   const [tickets, setTickets] = useState<RpaTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

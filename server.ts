@@ -1,11 +1,8 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { initialRpaTickets } from "./src/mockData";
+import { pool, testConnection, dbConfig } from "./src/config/db";
 import { RpaTicket } from "./src/types";
-
-// In-Memory Cloud Database
-let database: RpaTicket[] = [...initialRpaTickets];
 
 async function startServer() {
   const app = express();
@@ -13,106 +10,174 @@ async function startServer() {
 
   app.use(express.json());
 
-  // 1. API Endpoint - Get all tickets (supports date filtering)
-  app.get("/api/tickets", (req, res) => {
+  const TABLE_NAME = dbConfig.table;
+
+  async function query(sql: string, params?: any[]) {
+    const [rows] = await pool.execute(sql, params);
+    return rows as any[];
+  }
+
+  function mapRowToTicket(row: any): RpaTicket {
+    return {
+      id: row.id,
+      enterprise_name: row.enterprise_name,
+      analysis: row.AI_analysis || row.analysis || "暂无分析",
+      csm: row.csm || "",
+      rpa_coach: row.rpa_coach || "",
+      total_count: Number(row.total_count) || 0,
+      manual_count: Number(row.manual_count) || 0,
+      resolved_count: Number(row.resolved_count) || 0,
+      ccusers_name: row.users_name || row.ccusers_name || "未知",
+      start_time: row.start_time || "",
+      end_time: row.end_time || "",
+    };
+  }
+
+  app.get("/api/tickets", async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
-      let data = [...database];
+      let sql = `SELECT * FROM ${TABLE_NAME}`;
+      const params: any[] = [];
 
-      if (startDate && typeof startDate === "string") {
-        data = data.filter((t) => t.start_time >= startDate);
-      }
-      if (endDate && typeof endDate === "string") {
-        data = data.filter((t) => t.end_time <= endDate);
+      if (startDate || endDate) {
+        sql += " WHERE";
+        if (startDate && typeof startDate === "string") {
+          sql += ` start_time >= ?`;
+          params.push(startDate);
+        }
+        if (startDate && endDate) {
+          sql += " AND";
+        }
+        if (endDate && typeof endDate === "string") {
+          sql += ` end_time <= ?`;
+          params.push(endDate);
+        }
       }
 
-      res.json({ success: true, data });
+      const rows: any[] = await query(sql, params);
+      const tickets = rows.map(mapRowToTicket);
+      console.log(`📊 API /api/tickets called: startDate=${startDate}, endDate=${endDate}, returned ${tickets.length} records`);
+      res.json({ success: true, data: tickets });
     } catch (error: any) {
+      console.error(`❌ API /api/tickets error: ${error.message}`);
       res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // 2. API Endpoint - Create a new ticket
-  app.post("/api/tickets", (req, res) => {
+  app.post("/api/tickets", async (req, res) => {
     try {
       const ticket: Partial<RpaTicket> = req.body;
       if (!ticket.enterprise_name) {
         return res.status(400).json({ success: false, error: "Enterprise name is required." });
       }
 
-      const newId = database.length > 0 ? Math.max(...database.map((t) => t.id)) + 1 : 1;
-      const newTicket: RpaTicket = {
-        id: newId,
-        enterprise_name: ticket.enterprise_name,
-        analysis: ticket.analysis || "暂无分析",
-        csm: ticket.csm || "徐书",
-        rpa_coach: ticket.rpa_coach || "沐森",
-        total_count: Number(ticket.total_count) || 0,
-        manual_count: Number(ticket.manual_count) || 0,
-        resolved_count: Number(ticket.resolved_count) || 0,
-        ccusers_name: ticket.ccusers_name || "未知",
-        start_time: ticket.start_time || "2026-05-25",
-        end_time: ticket.end_time || "2026-05-30",
-      };
+      const sql = `INSERT INTO ${TABLE_NAME} 
+        (enterprise_name, AI_analysis, csm, rpa_coach, total_count, manual_count, resolved_count, users_name, start_time, end_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-      database.push(newTicket);
-      res.status(201).json({ success: true, data: newTicket });
+      const [result]: any = await pool.execute(sql, [
+        ticket.enterprise_name,
+        ticket.analysis || "暂无分析",
+        ticket.csm || "徐书",
+        ticket.rpa_coach || "沐森",
+        Number(ticket.total_count) || 0,
+        Number(ticket.manual_count) || 0,
+        Number(ticket.resolved_count) || 0,
+        ticket.ccusers_name || "未知",
+        ticket.start_time || "2026-05-25",
+        ticket.end_time || "2026-05-30",
+      ]);
+
+      const newTicketRow = await query(`SELECT * FROM ${TABLE_NAME} WHERE id = ?`, [result.insertId]);
+      res.status(201).json({ success: true, data: mapRowToTicket(newTicketRow[0]) });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // 3. API Endpoint - Update ticket
-  app.put("/api/tickets/:id", (req, res) => {
+  app.put("/api/tickets/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates: Partial<RpaTicket> = req.body;
 
-      const idx = database.findIndex((t) => t.id === id);
-      if (idx === -1) {
+      const existingRows = await query(`SELECT * FROM ${TABLE_NAME} WHERE id = ?`, [id]);
+      if (!existingRows || (existingRows as any[]).length === 0) {
         return res.status(444).json({ success: false, error: "Ticket not found." });
       }
 
-      database[idx] = {
-        ...database[idx],
-        ...updates,
-        total_count: updates.total_count !== undefined ? Number(updates.total_count) : database[idx].total_count,
-        manual_count: updates.manual_count !== undefined ? Number(updates.manual_count) : database[idx].manual_count,
-        resolved_count: updates.resolved_count !== undefined ? Number(updates.resolved_count) : database[idx].resolved_count,
-      };
+      const setClause: string[] = [];
+      const params: any[] = [];
 
-      res.json({ success: true, data: database[idx] });
+      if (updates.enterprise_name !== undefined) {
+        setClause.push("enterprise_name = ?");
+        params.push(updates.enterprise_name);
+      }
+      if (updates.analysis !== undefined) {
+        setClause.push("AI_analysis = ?");
+        params.push(updates.analysis);
+      }
+      if (updates.csm !== undefined) {
+        setClause.push("csm = ?");
+        params.push(updates.csm);
+      }
+      if (updates.rpa_coach !== undefined) {
+        setClause.push("rpa_coach = ?");
+        params.push(updates.rpa_coach);
+      }
+      if (updates.total_count !== undefined) {
+        setClause.push("total_count = ?");
+        params.push(Number(updates.total_count));
+      }
+      if (updates.manual_count !== undefined) {
+        setClause.push("manual_count = ?");
+        params.push(Number(updates.manual_count));
+      }
+      if (updates.resolved_count !== undefined) {
+        setClause.push("resolved_count = ?");
+        params.push(Number(updates.resolved_count));
+      }
+      if (updates.ccusers_name !== undefined) {
+        setClause.push("users_name = ?");
+        params.push(updates.ccusers_name);
+      }
+      if (updates.start_time !== undefined) {
+        setClause.push("start_time = ?");
+        params.push(updates.start_time);
+      }
+      if (updates.end_time !== undefined) {
+        setClause.push("end_time = ?");
+        params.push(updates.end_time);
+      }
+
+      if (setClause.length === 0) {
+        return res.json({ success: true, data: mapRowToTicket(existingRows[0]) });
+      }
+
+      params.push(id);
+      await query(`UPDATE ${TABLE_NAME} SET ${setClause.join(", ")} WHERE id = ?`, params);
+
+      const updatedRows = await query(`SELECT * FROM ${TABLE_NAME} WHERE id = ?`, [id]);
+      res.json({ success: true, data: mapRowToTicket(updatedRows[0]) });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // 4. API Endpoint - Delete ticket
-  app.delete("/api/tickets/:id", (req, res) => {
+  app.delete("/api/tickets/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const index = database.findIndex((t) => t.id === id);
-      if (index === -1) {
+      const existingRows = await query(`SELECT * FROM ${TABLE_NAME} WHERE id = ?`, [id]);
+      if (!existingRows || (existingRows as any[]).length === 0) {
         return res.status(404).json({ success: false, error: "Ticket not found." });
       }
-      database.splice(index, 1);
+
+      await query(`DELETE FROM ${TABLE_NAME} WHERE id = ?`, [id]);
       res.json({ success: true, message: `Ticket ${id} successfully deleted.` });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // 5. API Endpoint - Reset Database to original sheets data
-  app.post("/api/tickets/reset", (req, res) => {
-    try {
-      database = [...initialRpaTickets];
-      res.json({ success: true, data: database });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -125,6 +190,12 @@ async function startServer() {
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
+  }
+
+  const dbConnected = await testConnection();
+  if (!dbConnected) {
+    console.error("数据库连接失败，服务无法启动");
+    process.exit(1);
   }
 
   app.listen(PORT, "0.0.0.0", () => {

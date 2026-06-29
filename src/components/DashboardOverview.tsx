@@ -33,55 +33,33 @@ export default function DashboardOverview({
 
   // Group Data for charts based on dimensions
   const getTrendData = () => {
-    if (trendDimension === "csm") {
-      // Group by CSM
-      const groups: { [key: string]: { total: number; manual: number; resolved: number } } = {};
-      tickets.forEach((t) => {
-        if (!t.csm) return;
-        if (!groups[t.csm]) {
-          groups[t.csm] = { total: 0, manual: 0, resolved: 0 };
-        }
-        groups[t.csm].total += t.total_count;
-        groups[t.csm].manual += t.manual_count;
-        groups[t.csm].resolved += t.resolved_count;
-      });
+    const groups: { [key: string]: { total: number; manual: number } } = {};
+    const keyField = trendDimension === "csm" ? "csm" : "rpa_coach";
+    
+    tickets.forEach((t) => {
+      const key = trendDimension === "csm" ? t.csm : t.rpa_coach;
+      if (!key) return;
+      if (!groups[key]) {
+        groups[key] = { total: 0, manual: 0 };
+      }
+      groups[key].total += Number(t.total_count) || 0;
+      groups[key].manual += Number(t.manual_count) || 0;
+    });
 
-      return Object.entries(groups)
-        .map(([csmName, vals]) => ({
-          date: csmName,
-          total: vals.total,
-          manual: vals.manual,
-          resolved: vals.resolved,
-          color: "#818cf8",
-        }))
-        .sort((a, b) => b.total - a.total);
-    } else {
-      // Group by RPA Coach (RPA教练)
-      const groups: { [key: string]: { total: number; manual: number; resolved: number } } = {};
-      tickets.forEach((t) => {
-        if (!t.rpa_coach) return;
-        if (!groups[t.rpa_coach]) {
-          groups[t.rpa_coach] = { total: 0, manual: 0, resolved: 0 };
-        }
-        groups[t.rpa_coach].total += t.total_count;
-        groups[t.rpa_coach].manual += t.manual_count;
-        groups[t.rpa_coach].resolved += t.resolved_count;
-      });
+    const color = trendDimension === "csm" ? "#818cf8" : "#fb923c";
 
-      return Object.entries(groups)
-        .map(([coachName, vals]) => ({
-          date: coachName,
-          total: vals.total,
-          manual: vals.manual,
-          resolved: vals.resolved,
-          color: "#fb923c",
-        }))
-        .sort((a, b) => b.total - a.total);
-    }
+    return Object.entries(groups)
+      .map(([name, vals]) => ({
+        date: name,
+        total: vals.total,
+        manual: vals.manual,
+        color: color,
+      }))
+      .sort((a, b) => b.total - a.total);
   };
 
   const trendData = getTrendData();
-  const maxValInTrend = Math.max(...trendData.map((d) => d.total), 10);
+  const maxValInTrend = trendData.length > 0 ? Math.max(...trendData.map((d) => d.total)) : 10;
 
   // SVG parameters for resolution rate donut
   const donutRadius = 70;
@@ -180,6 +158,7 @@ export default function DashboardOverview({
               <div>
                 <h3 className="text-slate-800 font-bold text-lg">工单运行与进线趋势分析</h3>
                 <p className="text-slate-400 text-xs">实时分析当季多维度流量指标、操作介入情况</p>
+                <p className="text-emerald-500 text-xs mt-1 font-bold">数据: {tickets.length}条记录 | 趋势项: {trendData.length}个</p>
               </div>
               {/* Toggles */}
               <div className="flex rounded-lg bg-slate-100 p-1 self-start">
@@ -206,10 +185,10 @@ export default function DashboardOverview({
               </div>
             </div>
 
-            {/* Custom Interactive SVG/CSS Bar Chart */}
-            <div className="relative pt-4 h-64 flex flex-col justify-end">
+            {/* Simple CSS Bar Chart */}
+            <div className="relative pt-4 h-72">
               {/* Grid Y Lines */}
-              <div className="absolute inset-x-0 top-0 bottom-0 flex flex-col justify-between hover:pointer-events-none opacity-50 z-0">
+              <div className="absolute inset-x-0 top-4 bottom-0 flex flex-col justify-between hover:pointer-events-none opacity-50 z-0">
                 {[0, 25, 50, 75, 100].map((percent) => (
                   <div key={percent} className="w-full flex items-center">
                     <span className="text-[10px] text-gray-400 w-8 text-right pr-2">
@@ -220,24 +199,24 @@ export default function DashboardOverview({
                 ))}
               </div>
 
-              {/* Bars Row */}
-              <div className="flex items-end justify-around pl-8 h-48 relative z-10">
-                {trendData.map((d, index) => {
-                  const barHeightPercent = (d.total / maxValInTrend) * 100;
-                  const manualHeightPercent = (d.manual / maxValInTrend) * 100;
-                  const resolvedHeightPercent = (d.resolved / maxValInTrend) * 100;
+              {/* Bars Container */}
+              <div className="flex items-end justify-around px-8 h-56 pt-4">
+                {trendData.map((d) => {
+                  const chartHeight = 180;
+                  const barHeight = (d.total / maxValInTrend) * chartHeight;
+                  const manualHeight = (d.manual / (d.total || 1)) * barHeight;
                   const isHovered = hoveredBar === d.date;
 
                   return (
                     <div
                       key={d.date}
-                      className="flex flex-col items-center flex-1 relative max-w-[50px] group cursor-pointer"
+                      className="flex flex-col items-center flex-1 relative max-w-[60px] cursor-pointer"
                       onMouseEnter={() => setHoveredBar(d.date)}
                       onMouseLeave={() => setHoveredBar(null)}
                     >
                       {/* Tooltip */}
                       {isHovered && (
-                        <div className="absolute bottom-full mb-2 bg-slate-900/95 text-white p-3 rounded-lg text-xs shadow-lg z-50 pointer-events-none w-36 space-y-1">
+                        <div className="absolute bottom-full mb-2 bg-slate-900/95 text-white p-3 rounded-lg text-xs shadow-lg z-50 pointer-events-none w-32 space-y-1">
                           <p className="font-bold border-b border-white/10 pb-1 mb-1 text-center">
                             {d.date}
                           </p>
@@ -249,48 +228,37 @@ export default function DashboardOverview({
                             <span>人工处理</span>
                             <span className="font-bold text-indigo-300">{d.manual} 次</span>
                           </p>
-                          <p className="flex justify-between">
-                            <span>有效解决</span>
-                            <span className="font-bold text-emerald-300">{d.resolved} 次</span>
-                          </p>
                         </div>
                       )}
 
-                      {/* Main Bar Towers: Stacked visual layout */}
-                      <div className="w-6 sm:w-8 relative rounded-t-md overflow-hidden bg-slate-50 transition-all duration-300" style={{ height: `${Math.max(12, barHeightPercent)}%` }}>
-                        {/* Background total tower with hover effect */}
-                        <div
-                          className="absolute inset-0 opacity-80 group-hover:opacity-100 transition-all"
-                          style={{ backgroundColor: d.color }}
-                        />
-                        {/* Shaded bottom block represent Manual / Intervention part */}
-                        <div
-                          className="absolute bottom-0 inset-x-0 bg-black/15"
-                          style={{ height: `${(d.manual / (d.total || 1)) * 100}%` }}
-                        />
-                        {/* Inner glowing core for Resolved part */}
-                        <div
-                          className="absolute bottom-0 inset-x-1 bg-white/30 rounded-t-sm"
-                          style={{ height: `${(d.resolved / (d.total || 1)) * 100}%` }}
+                      {/* Value Label */}
+                      <span className="text-[10px] font-bold text-gray-700 mb-1">{d.total}</span>
+
+                      {/* Bar */}
+                      <div 
+                        className="w-8 relative rounded-t-lg overflow-hidden shadow-md transition-all duration-300"
+                        style={{ 
+                          height: `${Math.max(8, barHeight)}px`, 
+                          backgroundColor: d.color,
+                          opacity: isHovered ? 1 : 0.85
+                        }}
+                      >
+                        {/* Manual section */}
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 bg-black/25"
+                          style={{ height: `${manualHeight}px` }}
                         />
                       </div>
+
+                      {/* X Axis Label */}
+                      <span className={`text-[11px] font-medium mt-2 transition-colors ${
+                        isHovered ? "text-indigo-600 font-bold" : "text-gray-500"
+                      }`}>
+                        {d.date}
+                      </span>
                     </div>
                   );
                 })}
-              </div>
-
-              {/* X Axis labels */}
-              <div className="flex justify-around pl-8 pt-3 border-t border-slate-100">
-                {trendData.map((d) => (
-                  <span
-                    key={d.date}
-                    className={`text-[11px] font-medium transition-colors ${
-                      hoveredBar === d.date ? "text-indigo-600 font-bold" : "text-gray-500"
-                    }`}
-                  >
-                    {d.date}
-                  </span>
-                ))}
               </div>
             </div>
           </div>
@@ -304,10 +272,6 @@ export default function DashboardOverview({
             <div className="flex items-center space-x-1.5">
               <span className="w-2.5 h-2.5 rounded-xs bg-slate-500/80" />
               <span>人工响应</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-emerald-400" />
-              <span>有效合并/对账解决</span>
             </div>
           </div>
         </div>
