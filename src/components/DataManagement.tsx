@@ -47,8 +47,8 @@ export default function DataManagement({
   };
 
   const handleDownloadTemplateInPage = () => {
-    const headers = "企业名称,CSM负责人,RPA教练,进线总频次,人工介入次数,有效解决数,干系联系人,异常日志及分析摘要\n";
-    const sampleRowStr = "江苏福特汽车系统总成有限公司,韩甜,米粒,15,5,5,时泽阳,\"1、财务验证码模块超时阻断.2、环境网络异常自动退避较差\"";
+    const headers = "enterprise_name,csm,rpa_coach,total_count,manual_count,resolved_count,ccusers_name,analysis,start_time,end_time\n";
+    const sampleRowStr = "江苏福特汽车系统总成有限公司,韩甜,米粒,15,5,5,时泽阳,\"1、财务验证码模块超时阻断.2、环境网络异常自动退避较差\",2026-05-18,2026-05-24";
     const csvContent = "\uFEFF" + headers + sampleRowStr;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -89,7 +89,9 @@ export default function DataManagement({
             const manual_count = Number(parts[4]) || 1;
             const resolved_count = Number(parts[5]) || 1;
             const ccusers_name = parts[6]?.replace(/^["']|["']$/g, "").trim() || "未知";
-            const analysis = parts[7]?.replace(/^["']|["']$/g, "").trim() || "暂无AI分析";
+            const analysis = parts[7]?.replace(/^["']|["']$/g, "").trim() || "暂无分析";
+            const start_time = parts[8]?.replace(/^["']|["']$/g, "").trim() || "2026-05-25";
+            const end_time = parts[9]?.replace(/^["']|["']$/g, "").trim() || "2026-05-30";
             
             await onAddTicket({
               enterprise_name,
@@ -100,6 +102,8 @@ export default function DataManagement({
               resolved_count,
               ccusers_name,
               analysis,
+              start_time,
+              end_time,
             });
             importedCount++;
           }
