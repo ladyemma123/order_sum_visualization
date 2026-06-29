@@ -35,7 +35,7 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
       const matchCoach = selectedCoach === "all" || t.rpa_coach === selectedCoach;
       
       // Compute warning level on-the-fly dynamically to keep real-time updates intact!
-      const level = t.total_count >= 15 ? "严重" : t.total_count >= 5 ? "高频" : "正常";
+      const level = t.total_count >= 25 ? "高频" : t.total_count >= 10 ? "中频" : "低频";
       const matchLevel = selectedLevel === "all" || level === selectedLevel;
 
       return matchSearch && matchCsm && matchCoach && matchLevel;
@@ -108,9 +108,9 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
               className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none"
             >
               <option value="all">🚨 预警级别：全部评级</option>
-              <option value="严重">🛑 严重 (≥15 次)</option>
-              <option value="高频">⚡ 高频 (5~14 次)</option>
-              <option value="正常">🟢 正常 (0~4 次)</option>
+              <option value="高频">🛑 高频 (≥25 次)</option>
+              <option value="中频">⚡ 中频 (10~24 次)</option>
+              <option value="低频">🟢 低频 (0~9 次)</option>
             </select>
             <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 text-[10px]">▼</span>
           </div>
@@ -137,7 +137,7 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
             <tbody className="divide-y divide-gray-50 text-xs text-slate-700">
               {filteredTickets.length > 0 ? (
                 filteredTickets.map((t) => {
-                  const level = t.total_count >= 15 ? "严重" : t.total_count >= 5 ? "高频" : "正常";
+                  const level = t.total_count >= 25 ? "高频" : t.total_count >= 10 ? "中频" : "低频";
                   const isExp = expandedRow === t.id;
 
                   return (
@@ -169,14 +169,14 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
                           <div className="flex justify-center">
                             <span
                               className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-1 ${
-                                level === "严重"
-                                  ? "bg-rose-100 text-rose-700 shadow-xs"
-                                  : level === "高频"
+                                level === "高频"
+                                ? "bg-rose-100 text-rose-700 shadow-xs"
+                                  : level === "中频"
                                   ? "bg-amber-100 text-amber-700 shadow-xs"
                                   : "bg-emerald-50 text-emerald-700"
                               }`}
                             >
-                              <span className={`w-1 h-1 rounded-full ${level === "严重" ? "bg-rose-500" : level === "高频" ? "bg-amber-500" : "bg-emerald-500"}`} />
+                              <span className={`w-1 h-1 rounded-full ${level === "高频" ? "bg-rose-500" : level === "中频" ? "bg-amber-500" : "bg-emerald-500"}`} />
                               {level}
                             </span>
                           </div>

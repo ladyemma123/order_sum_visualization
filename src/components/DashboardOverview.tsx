@@ -21,14 +21,14 @@ export default function DashboardOverview({
   const enterpriseCount = activeTickets.length;
   const totalInboundCount = tickets.reduce((sum, t) => sum + t.total_count, 0);
   const resolvedCount = tickets.reduce((sum, t) => sum + t.resolved_count, 0);
-  const warningCount = tickets.filter((t) => t.total_count >= 5).length;
+  const warningCount = tickets.filter((t) => t.total_count >= 10).length;
 
   const averageInbound = enterpriseCount > 0 ? (totalInboundCount / 6).toFixed(1) : "0"; // 6-day cycle in standard cycle
-  const resolutionRate = totalInboundCount > 0 ? ((resolvedCount / totalInboundCount) * 100).toFixed(1) : "0.0";
+  const resolutionRate = totalInboundCount > 0 ? ((resolvedCount / totalInboundCount) * 100).toFixed(1) : "0";
 
-  // Pre-calculate Warning list (sorted descending by total_count, filters total_count >= 5)
+  // Pre-calculate Warning list (sorted descending by total_count, filters total_count >= 10)
   const warningEnterprises = [...tickets]
-    .filter((t) => t.total_count >= 5)
+    .filter((t) => t.total_count >= 10)
     .sort((a, b) => b.total_count - a.total_count);
 
   // Group Data for charts based on dimensions
@@ -143,8 +143,8 @@ export default function DashboardOverview({
             <span className="text-slate-400 text-sm font-medium">家</span>
           </div>
           <p className="text-gray-400 text-xs mt-3 flex items-center justify-between border-t border-gray-50 pt-3">
-            <span>≥5次进线需重点关注</span>
-            <span className="font-semibold text-rose-600">7家重度预警企业</span>
+            <span>≥10次进线需重点关注</span>
+            <span className="font-semibold text-rose-600">高频预警企业</span>
           </p>
         </div>
       </div>
@@ -382,12 +382,12 @@ export default function DashboardOverview({
               <Zap size={18} />
             </div>
             <div>
-              <h3 className="text-slate-800 font-bold text-base">高频预警企业列表</h3>
-              <p className="text-slate-400 text-xs">当期累计进线达到或超过 5 次的异常单位</p>
+              <h3 className="text-slate-800 font-bold text-base">预警企业列表</h3>
+              <p className="text-slate-400 text-xs">当期累计进线达到或超过 10 次的单位</p>
             </div>
           </div>
           <span className="px-3 py-1 bg-rose-100 text-rose-700 font-bold text-xs rounded-full shadow-xs">
-            {warningCount} 家企业 ≥ 5 次
+            {warningCount} 家企业 ≥ 10 次
           </span>
         </div>
 
@@ -396,7 +396,8 @@ export default function DashboardOverview({
             warningEnterprises.map((item, index) => {
               const maxCount = Math.max(...warningEnterprises.map((e) => e.total_count), 1);
               const progressWidth = `${(item.total_count / maxCount) * 100}%`;
-              const isSevere = item.total_count >= 15;
+              const warningLevel = item.total_count >= 25 ? "high" : (item.total_count >= 10 ? "mid" : "low");
+              const warningText = item.total_count >= 25 ? "高频" : (item.total_count >= 10 ? "中频" : "低频");
 
               return (
                 <div
@@ -446,15 +447,19 @@ export default function DashboardOverview({
                     <div className="flex items-center space-x-2">
                       <span
                         className={`text-xs px-2 py-0.5 rounded-sm font-semibold flex items-center gap-1 ${
-                          isSevere
+                          warningLevel === "high"
                             ? "bg-rose-50 text-rose-600 border border-rose-100"
-                            : "bg-amber-50 text-amber-600 border border-amber-100"
+                            : warningLevel === "mid"
+                            ? "bg-amber-50 text-amber-600 border border-amber-100"
+                            : "bg-emerald-50 text-emerald-600 border border-emerald-100"
                         }`}
                       >
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${isSevere ? "bg-rose-500" : "bg-amber-500"}`}
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            warningLevel === "high" ? "bg-rose-500" : warningLevel === "mid" ? "bg-amber-500" : "bg-emerald-500"
+                          }`}
                         />
-                        {isSevere ? "严重" : "高频"}
+                        {warningText}
                       </span>
                     </div>
 
@@ -462,7 +467,7 @@ export default function DashboardOverview({
                     <div className="w-28 bg-slate-100 h-2 rounded-full overflow-hidden relative">
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ${
-                          isSevere ? "bg-rose-500" : "bg-amber-500"
+                          warningLevel === "high" ? "bg-rose-500" : warningLevel === "mid" ? "bg-amber-500" : "bg-emerald-500"
                         }`}
                         style={{ width: progressWidth }}
                       />
@@ -477,7 +482,7 @@ export default function DashboardOverview({
             })
           ) : (
             <div className="p-12 text-center text-gray-400 text-sm">
-              暂无达到高频预警标准的企业
+              暂无达到预警标准的企业
             </div>
           )}
         </div>
