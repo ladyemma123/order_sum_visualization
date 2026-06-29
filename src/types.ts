@@ -1,7 +1,7 @@
 export interface RpaTicket {
   id: number;
   enterprise_name: string;
-  AI_analysis: string;
+  analysis: string;
   csm: string;
   rpa_coach: string;
   total_count: number;

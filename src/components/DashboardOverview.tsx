@@ -6,13 +6,11 @@ import { motion, AnimatePresence } from "motion/react";
 interface DashboardOverviewProps {
   tickets: RpaTicket[];
   onSelectTab: (tab: string) => void;
-  onSelectCompany: (companyName: string) => void;
 }
 
 export default function DashboardOverview({
   tickets,
   onSelectTab,
-  onSelectCompany,
 }: DashboardOverviewProps) {
   // Dimension state for the trend chart: 'csm' | 'coach'
   const [trendDimension, setTrendDimension] = useState<"csm" | "coach">("csm");
@@ -318,7 +316,7 @@ export default function DashboardOverview({
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs flex flex-col justify-between">
           <div>
             <h3 className="text-slate-800 font-bold text-lg mb-1">工单阻断与解决分流</h3>
-            <p className="text-slate-400 text-xs">统计 工程师解决 与 AI 自动拦截 占比率</p>
+            <p className="text-slate-400 text-xs">统计 工程师解决 与 自动闭环 占比率</p>
           </div>
 
           {/* Radial Pie Graph */}
@@ -393,21 +391,21 @@ export default function DashboardOverview({
                   </div>
 
                   <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-1.5">
-                      <span className="w-3 h-3 rounded-md bg-indigo-500 block" />
-                      <span className="text-slate-600 font-semibold">AI 拦截 / 自动闭环</span>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="w-3 h-3 rounded-md bg-indigo-500 block" />
+                        <span className="text-slate-600 font-semibold">自动闭环</span>
+                      </div>
+                      <div className="font-mono text-slate-800 font-bold">
+                        {aiInterceptCount}次 <span className="text-indigo-500 font-normal ml-1">({aiPct.toFixed(1)}%)</span>
+                      </div>
                     </div>
-                    <div className="font-mono text-slate-800 font-bold">
-                      {aiInterceptCount}次 <span className="text-indigo-500 font-normal ml-1">({aiPct.toFixed(1)}%)</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             );
           })()}
 
           <div className="text-center text-[11px] text-slate-500 bg-teal-50/50 py-2 px-3 rounded-xl border border-teal-50/75 font-sans">
-            AI 拦截自动闭包比例已达到 <span className="font-mono font-bold text-teal-700">65.4%</span> (静默拦截)
+            自动闭包比例已达到 <span className="font-mono font-bold text-teal-700">65.4%</span> (静默处理)
           </div>
         </div>
       </div>
@@ -457,8 +455,7 @@ export default function DashboardOverview({
                     <div className="space-y-1.5 flex-1">
                       <div className="flex items-center gap-2">
                         <h4
-                          onClick={() => onSelectCompany(item.enterprise_name)}
-                          className="text-slate-800 font-bold text-sm hover:text-indigo-600 transition-colors cursor-pointer"
+                          className="text-slate-800 font-bold text-sm"
                         >
                           {item.enterprise_name}
                         </h4>

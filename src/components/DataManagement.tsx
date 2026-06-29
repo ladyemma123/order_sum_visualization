@@ -89,7 +89,7 @@ export default function DataManagement({
             const manual_count = Number(parts[4]) || 1;
             const resolved_count = Number(parts[5]) || 1;
             const ccusers_name = parts[6]?.replace(/^["']|["']$/g, "").trim() || "未知";
-            const AI_analysis = parts[7]?.replace(/^["']|["']$/g, "").trim() || "暂无AI分析";
+            const analysis = parts[7]?.replace(/^["']|["']$/g, "").trim() || "暂无AI分析";
             
             await onAddTicket({
               enterprise_name,
@@ -99,7 +99,7 @@ export default function DataManagement({
               manual_count,
               resolved_count,
               ccusers_name,
-              AI_analysis,
+              analysis,
             });
             importedCount++;
           }
@@ -278,8 +278,8 @@ export default function DataManagement({
                           </div>
                         </td>
                         <td className="py-3 px-4 max-w-[200px]">
-                          <span className="line-clamp-2 text-slate-500" title={t.AI_analysis}>
-                            {t.AI_analysis || "暂无未决异常。"}
+                          <span className="line-clamp-2 text-slate-500" title={t.analysis}>
+                            {t.analysis || "暂无未决异常。"}
                           </span>
                         </td>
                       </tr>

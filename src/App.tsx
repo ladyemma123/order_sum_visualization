@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import { RpaTicket, DateCycle } from "./types";
 import DashboardOverview from "./components/DashboardOverview";
 import CompanyDetails from "./components/CompanyDetails";
-import AiAnalysis from "./components/AiAnalysis";
 import DataManagement from "./components/DataManagement";
-import { LayoutDashboard, TableProperties, Cpu, Database, RefreshCcw, Calendar, CheckCircle2, CloudLightning, Upload, Download, X, FileMinus, Import } from "lucide-react";
+import { LayoutDashboard, TableProperties, Database, RefreshCcw, Calendar, CheckCircle2, CloudLightning, Upload, Download, X, FileMinus, Import } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 const weekCycles: DateCycle[] = [
@@ -24,8 +23,6 @@ export default function App() {
   const [tickets, setTickets] = useState<RpaTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorText, setErrorText] = useState<string>("");
-  const [preSelectedCompany, setPreSelectedCompany] = useState<RpaTicket | null>(null);
-
   const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
 
   const activeCycle = periodMode === "week" ? weekCycles[currentWeekIndex] : monthCycles[currentMonthIndex];
@@ -75,7 +72,7 @@ export default function App() {
             const manual_count = Number(parts[4]) || 1;
             const resolved_count = Number(parts[5]) || 1;
             const ccusers_name = parts[6]?.replace(/^["']|["']$/g, "").trim() || "未知";
-            const AI_analysis = parts[7]?.replace(/^["']|["']$/g, "").trim() || "暂无AI分析";
+            const analysis = parts[7]?.replace(/^["']|["']$/g, "").trim() || "暂无分析";
             
             await handleAddTicket({
               enterprise_name,
@@ -85,7 +82,7 @@ export default function App() {
               manual_count,
               resolved_count,
               ccusers_name,
-              AI_analysis,
+              analysis,
               start_time: activeCycle.startDate,
               end_time: activeCycle.endDate,
             });
@@ -207,21 +204,6 @@ export default function App() {
     }
   };
 
-  // Quick Action: Send enterprise from details panel directly to AI Analysis workstation
-  const handleAnalyzeCompany = (company: RpaTicket) => {
-    setPreSelectedCompany(company);
-    setSelectedTab("智能诊断");
-  };
-
-  // Quick Action: Link from Warning Lists
-  const handleSelectCompanyFromOverview = (companyName: string) => {
-    const matched = tickets.find((t) => t.enterprise_name === companyName);
-    if (matched) {
-      setPreSelectedCompany(matched);
-      setSelectedTab("智能诊断");
-    }
-  };
-
   return (
     <div id="app-workspace" className="min-h-screen bg-slate-50/50 flex flex-col font-sans transition-all selection:bg-indigo-100 selection:text-indigo-800">
       {/* Premium Deep Cosmic Dark Header */}
@@ -316,7 +298,6 @@ export default function App() {
             {[
               { id: "总览", label: "大盘总览", icon: <LayoutDashboard size={15} /> },
               { id: "详情", label: "企业明细", icon: <TableProperties size={15} /> },
-              { id: "智能诊断", label: "智能诊断", icon: <Cpu size={15} /> },
               { id: "数据管理", label: "数据管理", icon: <Database size={15} /> },
             ].map((tab) => (
               <button
@@ -387,21 +368,12 @@ export default function App() {
                 <DashboardOverview
                   tickets={tickets}
                   onSelectTab={setSelectedTab}
-                  onSelectCompany={handleSelectCompanyFromOverview}
                 />
               )}
 
               {selectedTab === "详情" && (
                 <CompanyDetails
                   tickets={tickets}
-                  onAnalyzeCompany={handleAnalyzeCompany}
-                />
-              )}
-
-              {selectedTab === "智能诊断" && (
-                <AiAnalysis
-                  tickets={tickets}
-                  preSelectedCompany={preSelectedCompany}
                 />
               )}
 
@@ -527,7 +499,7 @@ export default function App() {
           <p>RPA Tickets &amp; Incidents Visual Dashboard Platform</p>
           <div className="flex items-center space-x-1.5 font-bold text-slate-500">
             <CheckCircle2 size={12} className="text-emerald-500" />
-            <span>分布式云数据库副本与 Gemini-3.5-flash 核查机制已就绪</span>
+            <span>分布式云数据库副本与工单核查机制已就绪</span>
           </div>
         </div>
       </footer>

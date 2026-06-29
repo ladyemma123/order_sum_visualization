@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { RpaTicket } from "../types";
-import { Search, Filter, ShieldAlert, BadgeInfo, CheckCircle, ChevronDown, ChevronUp, Cpu, Award } from "lucide-react";
+import { Search, Filter, ShieldAlert, BadgeInfo, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface CompanyDetailsProps {
   tickets: RpaTicket[];
-  onAnalyzeCompany: (company: RpaTicket) => void;
 }
 
-export default function CompanyDetails({ tickets, onAnalyzeCompany }: CompanyDetailsProps) {
+export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCsm, setSelectedCsm] = useState("all");
   const [selectedCoach, setSelectedCoach] = useState("all");
@@ -204,45 +203,15 @@ export default function CompanyDetails({ tickets, onAnalyzeCompany }: CompanyDet
                                 exit={{ opacity: 0, height: 0 }}
                                 className="overflow-hidden"
                               >
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                  {/* Left: Raw log text block */}
-                                  <div className="lg:col-span-2 space-y-3">
+                                <div className="space-y-3">
                                     <h4 className="text-slate-800 font-bold text-xs flex items-center gap-1.5 uppercase tracking-wide">
                                       <ShieldAlert size={14} className="text-amber-500" />
                                       RPA 系统运行日志及分析摘要
                                     </h4>
                                     <div className="bg-white p-4 rounded-xl border border-gray-100 font-mono text-slate-600 text-xs leading-relaxed whitespace-pre-wrap max-h-[180px] overflow-y-auto shadow-inner bg-slate-50/20">
-                                      {t.AI_analysis || "暂无未决异常记录。流程在历史周期内运行异常平稳正常，没有触发任何人工转移标记。"}
+                                      {t.analysis || "暂无未决异常记录。流程在历史周期内运行异常平稳正常，没有触发任何人工转移标记。"}
                                     </div>
                                   </div>
-
-                                  {/* Right: AI Actions Panel */}
-                                  <div className="bg-white p-5 rounded-xl border border-gray-100 flex flex-col justify-between shadow-xs">
-                                    <div className="space-y-2">
-                                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 font-bold rounded-xs text-[10px] inline-flex items-center gap-1.5">
-                                        <Cpu size={12} />
-                                        <span>AI COGNITIVE ANALYSIS</span>
-                                      </span>
-                                      <h4 className="text-slate-800 font-bold text-sm">Gemini 智能异常根因分析</h4>
-                                      <p className="text-slate-400 text-xs leading-relaxed">
-                                        调取当期日志及人工响应记录，基于自动化控制流程特征，由 Gemini 运行深度神经网络，给出一键异常合并、等待修复等诊断报告。
-                                      </p>
-                                    </div>
-
-                                    <div className="pt-4 border-t border-gray-50 mt-4 flex items-center justify-between">
-                                      <div className="text-[11px] text-gray-400">
-                                        当前异常累计：<span className="font-extrabold text-slate-700">{t.total_count}</span>
-                                      </div>
-                                      <button
-                                        onClick={() => onAnalyzeCompany(t)}
-                                        className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-indigo-600 hover:bg-slate-900 text-white font-semibold text-xs rounded-lg transition-all shadow-xs cursor-pointer"
-                                      >
-                                        <Cpu size={13} />
-                                        <span>一键诊断深究</span>
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
                               </motion.div>
                             </td>
                           </tr>

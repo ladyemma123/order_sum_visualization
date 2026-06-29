@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  kanban-app:
+    build: .
+    container_name: kanban_fullstack_app
+    restart: always
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
