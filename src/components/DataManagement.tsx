@@ -35,12 +35,9 @@ export default function DataManagement({
   };
 
   const handleResetData = async () => {
-    if (!window.confirm("此操作将会把云端数据库重置为默认预载初始记录。是否继续？")) {
-      return;
-    }
     try {
       await onResetDatabase();
-      showSuccess("云数据库重置完成，已重新载入系统原始预载的工单数据！");
+      showSuccess("数据库内容已重新加载！");
     } catch (err) {
       console.error(err);
     }

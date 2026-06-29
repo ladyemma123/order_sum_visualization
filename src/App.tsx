@@ -30,8 +30,8 @@ export default function App() {
   const activeCycle = periodMode === "week" ? weekCycles[currentWeekIndex] : monthCycles[currentMonthIndex];
 
   const handleDownloadTemplate = () => {
-    const headers = "企业名称,CSM负责人,RPA教练,进线总频次,人工介入次数,有效解决数,干系联系人,异常日志及分析摘要\n";
-    const sampleRowStr = "江苏福特汽车系统总成有限公司,韩甜,米粒,15,5,5,时泽阳,\"1、财务验证码模块超时阻断.2、环境网络异常自动退避较差\"";
+    const headers = "enterprise_name,csm,rpa_coach,total_count,manual_count,resolved_count,ccusers_name,analysis,start_time,end_time\n";
+    const sampleRowStr = "江苏福特汽车系统总成有限公司,韩甜,米粒,15,5,5,时泽阳,\"1、财务验证码模块超时阻断.2、环境网络异常自动退避较差\",2026-05-18,2026-05-24";
     const csvContent = "\uFEFF" + headers + sampleRowStr;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -190,17 +190,11 @@ export default function App() {
     }
   };
 
-  // 5. Reset Database to seed state
+  // 5. Refresh database data
   const handleResetDatabase = async () => {
     try {
-      const res = await fetch("/api/tickets/reset", {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (data.success) {
-        await fetchTickets();
-        return true;
-      }
+      await fetchTickets();
+      return true;
     } catch (err: any) {
       alert("连接错误: " + err.message);
     }
