@@ -6,28 +6,21 @@ import DataManagement from "./components/DataManagement";
 import { LayoutDashboard, TableProperties, Database, RefreshCcw, Calendar, CheckCircle2, CloudLightning, Upload, Download, X, FileMinus, Import } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-const weekCycles: DateCycle[] = [
-  { label: "2026.05.18 ~ 2026.05.24", startDate: "2026-05-18", endDate: "2026-05-24" },
-  { label: "2026.05.25 ~ 2026.05.31", startDate: "2026-05-25", endDate: "2026-05-31" },
-  { label: "2026.06.01 ~ 2026.06.08", startDate: "2026-06-01", endDate: "2026-06-08" },
-];
-
-const monthCycles: DateCycle[] = [
-  { label: "2026.05.01 ~ 2026.05.31", startDate: "2026-05-01", endDate: "2026-05-31" },
-  { label: "2026.06.01 ~ 2026.06.30", startDate: "2026-06-01", endDate: "2026-06-30" },
-];
-
 export default function App() {
   const [selectedTab, setSelectedTab] = useState<string>("总览");
   const [periodMode, setPeriodMode] = useState<"week" | "month">("week");
-  const [currentWeekIndex, setCurrentWeekIndex] = useState<number>(0); // Defaults to May 18-24
-  const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(0); // Defaults to May Month
+  const [currentWeekIndex, setCurrentWeekIndex] = useState<number>(0);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState<number>(0);
   const [tickets, setTickets] = useState<RpaTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorText, setErrorText] = useState<string>("");
   const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
+  const [weekCycles, setWeekCycles] = useState<DateCycle[]>([]);
+  const [monthCycles, setMonthCycles] = useState<DateCycle[]>([]);
 
-  const activeCycle = periodMode === "week" ? weekCycles[currentWeekIndex] : monthCycles[currentMonthIndex];
+  const activeCycle = periodMode === "week" 
+    ? (weekCycles[currentWeekIndex] || { label: "", startDate: "", endDate: "" }) 
+    : (monthCycles[currentMonthIndex] || { label: "", startDate: "", endDate: "" });
 
   const handleDownloadTemplate = () => {
     const headers = "enterprise_name,csm,rpa_coach,total_count,manual_count,resolved_count,ccusers_name,analysis,start_time,end_time\n";
@@ -104,7 +97,24 @@ export default function App() {
   };
 
   // 1. Fetch tickets from express api with filter parameters
+  const fetchPeriods = async () => {
+    try {
+      const res = await fetch("/api/periods");
+      const output = await res.json();
+      if (output.success) {
+        setWeekCycles(output.data.weekCycles || []);
+        setMonthCycles(output.data.monthCycles || []);
+      }
+    } catch (err: any) {
+      console.error("获取日期周期失败:", err);
+    }
+  };
+
   const fetchTickets = async () => {
+    if (!activeCycle.startDate || !activeCycle.endDate) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setErrorText("");
     try {
@@ -124,8 +134,14 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchTickets();
-  }, [periodMode, currentWeekIndex, currentMonthIndex]);
+    fetchPeriods();
+  }, []);
+
+  useEffect(() => {
+    if (weekCycles.length > 0 || monthCycles.length > 0) {
+      fetchTickets();
+    }
+  }, [periodMode, currentWeekIndex, currentMonthIndex, weekCycles, monthCycles]);
 
   // 2. Add ticket to Database
   const handleAddTicket = async (ticket: Partial<RpaTicket>) => {
@@ -193,6 +209,7 @@ export default function App() {
   // 5. Refresh database data
   const handleResetDatabase = async () => {
     try {
+      await fetchPeriods();
       await fetchTickets();
       return true;
     } catch (err: any) {
