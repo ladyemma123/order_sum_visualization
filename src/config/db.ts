@@ -18,11 +18,7 @@ const dbConfig = {
   table: process.env.MYSQL_TABLE || "gy_workorder_summary",
 };
 
-const isCloudDatabase = dbConfig.host.includes(".sql.tencentcdb.com") || 
-                        dbConfig.host.includes(".rds.aliyuncs.com") ||
-                        dbConfig.host.includes(".polardb.polardb") ||
-                        dbConfig.host.includes(".mysql.database.azure.com") ||
-                        !/^\d+\.\d+\.\d+\.\d+$/.test(dbConfig.host);
+const useSSL = process.env.MYSQL_USE_SSL === "true";
 
 export const pool = mysql.createPool({
   host: dbConfig.host,
@@ -33,12 +29,11 @@ export const pool = mysql.createPool({
   connectionLimit: 10,
   waitForConnections: true,
   charset: "utf8mb4",
-  ...(isCloudDatabase ? {
+  connectTimeout: 15000,
+  ...(useSSL ? {
     ssl: {
       rejectUnauthorized: false,
     },
-    connectTimeout: 10000,
-    acquireTimeout: 10000,
   } : {}),
 });
 
