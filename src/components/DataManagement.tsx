@@ -19,13 +19,21 @@ export default function DataManagement({
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingImport, setLoadingImport] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Filter tickets to preview
   const filtered = tickets.filter(
     (t) =>
       t.enterprise_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.ccusers_name && t.ccusers_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      (t.ccusers_name && t.ccusers_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      t.csm.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.rpa_coach && t.rpa_coach.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedTickets = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const showSuccess = (msg: string) => {
     setActionSuccess(msg);
@@ -188,7 +196,7 @@ export default function DataManagement({
                 <li><strong>企业名称：</strong>企业客户的规范全称</li>
                 <li><strong>CSM 负责人：</strong>对接的客户成功经理名</li>
                 <li><strong>RPA教练：</strong>辅导该企业的RPA技术教练</li>
-                <li><strong>运营频次：</strong>进线总频次/人工量/工程师解决数</li>
+                <li><strong>运营频次：</strong>进线总频次/工程师处理次数</li>
                 <li><strong>日志摘要：</strong>具体的系统异常日志文本</li>
               </ul>
             </div>
@@ -235,7 +243,7 @@ export default function DataManagement({
                 </span>
                 <input
                   type="text"
-                  placeholder="搜索企业全称或负责人..."
+                  placeholder="搜索企业名称 / CSM / RPA教练 / 进线名称..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-8 pr-4 py-1.5 border border-gray-200 rounded-xl text-xs text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
@@ -249,22 +257,22 @@ export default function DataManagement({
                 <thead>
                   <tr className="bg-slate-50/30 text-slate-500 font-semibold text-[10px] border-b border-gray-100 uppercase tracking-wider">
                     <th className="py-3 px-5 w-12 text-center">ID</th>
-                    <th className="py-3 px-4">企业单位 / 反馈周期</th>
+                    <th className="py-3 px-4">企业名称 / 反馈周期</th>
                     <th className="py-3 px-4 text-center">CSM / RPA教练</th>
-                    <th className="py-3 px-4 text-center">数据分布 (总进线/人工/解决)</th>
+                    <th className="py-3 px-4 text-center">数据分布 (总进线/工程师处理)</th>
                     <th className="py-3 px-4 text-center">系统异常摘要快照</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-[11px] text-slate-600">
-                  {filtered.length > 0 ? (
-                    filtered.map((t) => (
+                  {paginatedTickets.length > 0 ? (
+                    paginatedTickets.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-50/20 transition-colors">
                         <td className="py-3 px-5 text-center font-mono text-gray-400">{t.id}</td>
                         <td className="py-3 px-4">
                           <div className="space-y-0.5">
                             <span className="font-bold text-slate-800 text-xs">{t.enterprise_name}</span>
                             <div className="text-[10px] text-gray-400 font-mono">
-                              {t.start_time} 至 {t.end_time} | 联系人: {t.ccusers_name || "-"}
+                              {t.start_time} 至 {t.end_time} | 进线名称: {t.ccusers_name || "-"}
                             </div>
                           </div>
                         </td>
@@ -275,7 +283,7 @@ export default function DataManagement({
                         <td className="py-3 px-4 text-center font-mono">
                           <div className="font-extrabold text-slate-800 text-xs">{t.total_count}次</div>
                           <div className="text-[10px] text-slate-400">
-                            人工:{t.manual_count} | 工程师:{t.resolved_count}
+                            工程师:{t.manual_count}次
                           </div>
                         </td>
                         <td className="py-3 px-4 max-w-[200px]">
@@ -297,15 +305,73 @@ export default function DataManagement({
             </div>
           </div>
 
-          {/* Console Foot Status */}
-          <div className="px-6 py-4 bg-slate-50/50 border-t border-gray-100 flex items-center justify-between text-[10px] text-slate-400">
+          {/* Console Foot Status with Pagination */}
+          <div className="px-6 py-4 bg-slate-50/50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-slate-400">
             <span>
               已加载托管结构记录：<strong className="text-slate-700 font-medium">{filtered.length}行</strong> / 当前周期
             </span>
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>数据静默对账系统：就绪</span>
-            </span>
+            
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>数据静默对账系统：就绪</span>
+              </span>
+              
+              {/* Pagination */}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-500">
+                  第 {currentPage} / {totalPages} 页
+                </span>
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  首页
+                </button>
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  上一页
+                </button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = totalPages > 5 && currentPage > 3 && i < 4
+                    ? currentPage - 2 + i
+                    : totalPages > 5 && currentPage <= 3
+                      ? i + 1
+                      : i + 1;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-2 py-1 text-[10px] border rounded-md transition-colors ${
+                        currentPage === pageNum
+                          ? "bg-indigo-600 text-white border-indigo-600"
+                          : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  下一页
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  尾页
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

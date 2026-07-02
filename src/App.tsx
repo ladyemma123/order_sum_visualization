@@ -459,7 +459,7 @@ export default function App() {
               <div className="space-y-1.5">
                 <h4 className="text-xs font-bold text-slate-700">步骤一：下载模板 (支持 Excel 与 WPS Natively)</h4>
                 <p className="text-slate-400 text-[11px] leading-relaxed">
-                  标准模板已支持：企业全称、CSM团队、RPA教练督导、总来电进线数、人工介入次数、工程师完结确认等规范。直接输入，秒级上报。
+                  标准模板已支持：企业全称、CSM团队、RPA教练督导、总来电进线数、工程师介入次数、工程师完结确认等规范。直接输入，秒级上报。
                 </p>
                 <button
                   type="button"

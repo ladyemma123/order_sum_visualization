@@ -66,8 +66,7 @@ async function startServer() {
 
   app.get("/api/periods", async (req, res) => {
     try {
-      const weekRows: any[] = await query(`SELECT DISTINCT start_time, end_time FROM ${TABLE_NAME} ORDER BY start_time`);
-      console.log(`📅 weekRows raw:`, JSON.stringify(weekRows));
+      const weekRows: any[] = await query(`SELECT DISTINCT start_time, end_time FROM ${TABLE_NAME} ORDER BY start_time DESC`);
       
       const weekCycles = weekRows.map(row => ({
         label: `${String(row.start_time).replace(/-/g, ".")} ~ ${String(row.end_time).replace(/-/g, ".")}`,
@@ -75,8 +74,7 @@ async function startServer() {
         endDate: String(row.end_time),
       }));
 
-      const monthRows: any[] = await query(`SELECT DISTINCT DATE_FORMAT(start_time, '%Y-%m-01') as start_time, DATE_FORMAT(end_time, '%Y-%m-%d') as end_time FROM ${TABLE_NAME} ORDER BY start_time`);
-      console.log(`📅 monthRows raw:`, JSON.stringify(monthRows));
+      const monthRows: any[] = await query(`SELECT DISTINCT DATE_FORMAT(start_time, '%Y-%m-01') as start_time, DATE_FORMAT(end_time, '%Y-%m-%d') as end_time FROM ${TABLE_NAME} ORDER BY start_time DESC`);
       
       const monthMap: Record<string, { startDate: string; endDate: string }> = {};
       monthRows.forEach(row => {
@@ -95,7 +93,6 @@ async function startServer() {
         endDate: item.endDate,
       }));
 
-      console.log(`📅 API /api/periods called: weekCycles=${weekCycles.length}, monthCycles=${monthCycles.length}`);
       res.json({ success: true, data: { weekCycles, monthCycles } });
     } catch (error: any) {
       console.error(`❌ API /api/periods error: ${error.message}`);

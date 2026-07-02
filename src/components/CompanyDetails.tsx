@@ -13,6 +13,8 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
   const [selectedCoach, setSelectedCoach] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Extract unique values for filter dropdowns
   const csms = useMemo(() => {
@@ -29,7 +31,9 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       const matchSearch = t.enterprise_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.ccusers_name && t.ccusers_name.toLowerCase().includes(searchTerm.toLowerCase()));
+        (t.ccusers_name && t.ccusers_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        t.csm.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.rpa_coach && t.rpa_coach.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchCsm = selectedCsm === "all" || t.csm === selectedCsm;
       const matchCoach = selectedCoach === "all" || t.rpa_coach === selectedCoach;
@@ -41,6 +45,19 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
       return matchSearch && matchCsm && matchCoach && matchLevel;
     }).sort((a, b) => b.total_count - a.total_count); // Descending by inbound total
   }, [tickets, searchTerm, selectedCsm, selectedCoach, selectedLevel]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const paginatedTickets = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredTickets.slice(start, end);
+  }, [filteredTickets, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setExpandedRow(null);
+  };
 
   const toggleExpand = (id: number) => {
     setExpandedRow(expandedRow === id ? null : id);
@@ -59,7 +76,7 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
             </span>
             <input
               type="text"
-              placeholder="搜寻企业名称 / 联系人..."
+              placeholder="搜寻企业名称 / CSM / RPA教练 / 进线名称..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
@@ -73,10 +90,9 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
               onChange={(e) => setSelectedCsm(e.target.value)}
               className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none"
             >
-              <option value="all">📞 CSM：全部负责人</option>
               {csms.map((csm) => (
                 <option key={csm} value={csm}>
-                  CSM负责人: {csm === "all" ? "全部" : csm}
+                  {csm === "all" ? "📞 CSM：全部负责人" : `CSM负责人: ${csm}`}
                 </option>
               ))}
             </select>
@@ -90,10 +106,9 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
               onChange={(e) => setSelectedCoach(e.target.value)}
               className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none"
             >
-              <option value="all">👨‍💻 RPA教练：全部主管</option>
               {coaches.map((coach) => (
                 <option key={coach} value={coach}>
-                  RPA教练: {coach === "all" ? "全部" : coach}
+                  {coach === "all" ? "👨‍💻 RPA教练：全部主管" : `RPA教练: ${coach}`}
                 </option>
               ))}
             </select>
@@ -128,15 +143,15 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
                 <th className="py-4 px-4 text-center">CSM</th>
                 <th className="py-4 px-4 text-center">RPA教练</th>
                 <th className="py-4 px-4 text-center">进线总数</th>
-                <th className="py-4 px-4 text-center">人工介入</th>
+                <th className="py-4 px-4 text-center">工程师处理</th>
                 <th className="py-4 px-4 text-center">有效解决</th>
                 <th className="py-4 px-6 text-center">预警等级</th>
                 <th className="py-4 px-6 w-20"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-xs text-slate-700">
-              {filteredTickets.length > 0 ? (
-                filteredTickets.map((t) => {
+              {paginatedTickets.length > 0 ? (
+                paginatedTickets.map((t) => {
                   const level = t.total_count >= 25 ? "高频" : t.total_count >= 10 ? "中频" : "低频";
                   const isExp = expandedRow === t.id;
 
@@ -154,7 +169,7 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
                               {t.ccusers_name && (
                                 <>
                                   <span className="text-gray-200">|</span>
-                                  <span>联系人: {t.ccusers_name}</span>
+                                  <span>进线名称: {t.ccusers_name}</span>
                                 </>
                               )}
                             </div>
@@ -209,7 +224,7 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
                                       RPA 系统运行日志及分析摘要
                                     </h4>
                                     <div className="bg-white p-4 rounded-xl border border-gray-100 font-mono text-slate-600 text-xs leading-relaxed whitespace-pre-wrap max-h-[180px] overflow-y-auto shadow-inner bg-slate-50/20">
-                                      {t.analysis || "暂无未决异常记录。流程在历史周期内运行异常平稳正常，没有触发任何人工转移标记。"}
+                                      {t.analysis || "暂无未决异常记录。流程在历史周期内运行异常平稳正常，没有触发任何工程师转移标记。"}
                                     </div>
                                   </div>
                               </motion.div>
@@ -235,7 +250,63 @@ export default function CompanyDetails({ tickets }: CompanyDetailsProps) {
           <span>
             当前展示符合过滤条件的：<strong className="text-slate-700">{filteredTickets.length}</strong> / {tickets.length} 家企业
           </span>
-          <span>筛选机制工作正常 &amp; 并具备自动实时排序</span>
+          
+          {/* Pagination */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-500">
+              第 {currentPage} / {totalPages} 页
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+                className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                首页
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                上一页
+              </button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = totalPages > 5 && currentPage > 3 && i < 4
+                  ? currentPage - 2 + i
+                  : totalPages > 5 && currentPage <= 3
+                    ? i + 1
+                    : i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-2 py-1 text-[10px] border rounded-md transition-colors ${
+                      currentPage === pageNum
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                下一页
+              </button>
+              <button
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 text-[10px] border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                尾页
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -226,7 +226,7 @@ export default function DashboardOverview({
                             <span className="font-bold text-amber-300">{d.total} 次</span>
                           </p>
                           <p className="flex justify-between">
-                            <span>人工处理</span>
+                            <span>工程师处理</span>
                             <span className="font-bold text-indigo-300">{d.manual} 次</span>
                           </p>
                         </div>
@@ -272,7 +272,7 @@ export default function DashboardOverview({
             </div>
             <div className="flex items-center space-x-1.5">
               <span className="w-2.5 h-2.5 rounded-xs bg-slate-500/80" />
-              <span>人工响应</span>
+              <span>工程师处理</span>
             </div>
           </div>
         </div>
@@ -286,20 +286,20 @@ export default function DashboardOverview({
 
           {/* Radial Pie Graph */}
           {(() => {
-            const autoClosedCount = Math.max(0, totalInboundCount - manualCount);
-            const resolvedPct = totalInboundCount > 0 ? (manualCount / totalInboundCount) * 100 : 0;
-            const aiPct = totalInboundCount > 0 ? (autoClosedCount / totalInboundCount) * 100 : 0;
+            const engineerCount = manualCount;
+            const autoClosedCount = Math.max(0, totalInboundCount - engineerCount);
+            const engineerPct = totalInboundCount > 0 ? (engineerCount / totalInboundCount) * 100 : 0;
+            const autoPct = totalInboundCount > 0 ? (autoClosedCount / totalInboundCount) * 100 : 0;
 
             const pieRadius = 50;
-            const pieCircumference = 2 * Math.PI * pieRadius; // ~314.15
-            const resolvedStrokeLength = (resolvedPct / 100) * pieCircumference;
-            const aiStrokeLength = (aiPct / 100) * pieCircumference;
+            const pieCircumference = 2 * Math.PI * pieRadius;
+            const engineerStrokeLength = (engineerPct / 100) * pieCircumference;
+            const autoStrokeLength = (autoPct / 100) * pieCircumference;
 
             return (
               <div className="space-y-4">
                 <div className="relative flex items-center justify-center py-4">
                   <svg className="w-40 h-40 transform -rotate-90">
-                    {/* Background circle representing the groove */}
                     <circle
                       cx="80"
                       cy="80"
@@ -308,33 +308,30 @@ export default function DashboardOverview({
                       stroke="#f1f5f9"
                       strokeWidth="28"
                     />
-                    {/* AI Intercept slice */}
                     <circle
                       cx="80"
                       cy="80"
                       r={pieRadius}
                       fill="transparent"
-                      stroke="#6366f1" /* Indigo */
+                      stroke="#6366f1"
                       strokeWidth="28"
-                      strokeDasharray={`${aiStrokeLength} ${pieCircumference}`}
-                      strokeDashoffset={-resolvedStrokeLength}
+                      strokeDasharray={`${autoStrokeLength} ${pieCircumference}`}
+                      strokeDashoffset={-engineerStrokeLength}
                       className="transition-all duration-1000 ease-out cursor-pointer hover:stroke-[30px]"
                     />
-                    {/* Engineer Solved slice */}
                     <circle
                       cx="80"
                       cy="80"
                       r={pieRadius}
                       fill="transparent"
-                      stroke="#0d9488" /* Teal */
+                      stroke="#0d9488"
                       strokeWidth="28"
-                      strokeDasharray={`${resolvedStrokeLength} ${pieCircumference}`}
+                      strokeDasharray={`${engineerStrokeLength} ${pieCircumference}`}
                       strokeDashoffset="0"
                       className="transition-all duration-1000 ease-out cursor-pointer hover:stroke-[30px]"
                     />
                   </svg>
 
-                  {/* Absolute Center total stats block */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
                     <span className="text-xl font-black text-slate-800 tracking-tight">
                       {totalInboundCount}次
@@ -343,7 +340,6 @@ export default function DashboardOverview({
                   </div>
                 </div>
 
-                {/* Highly structured details legend */}
                 <div className="space-y-2 border-t border-slate-50 pt-3">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1.5">
@@ -351,7 +347,7 @@ export default function DashboardOverview({
                       <span className="text-slate-600 font-semibold">工程师解决</span>
                     </div>
                     <div className="font-mono text-slate-800 font-bold">
-                      {resolvedCount}次 <span className="text-teal-600 font-normal ml-1">({resolvedPct.toFixed(1)}%)</span>
+                      {engineerCount}次 <span className="text-teal-600 font-normal ml-1">({engineerPct.toFixed(1)}%)</span>
                     </div>
                   </div>
 
@@ -361,7 +357,7 @@ export default function DashboardOverview({
                         <span className="text-slate-600 font-semibold">自动闭环</span>
                       </div>
                       <div className="font-mono text-slate-800 font-bold">
-                      {autoClosedCount}次 <span className="text-indigo-500 font-normal ml-1">({aiPct.toFixed(1)}%)</span>
+                      {autoClosedCount}次 <span className="text-indigo-500 font-normal ml-1">({autoPct.toFixed(1)}%)</span>
                       </div>
                     </div>
                 </div>
@@ -437,7 +433,7 @@ export default function DashboardOverview({
                           RPA教练: <strong className="text-slate-700 font-medium">{item.rpa_coach}</strong>
                         </span>
                         <span className="text-gray-400 line-clamp-1 flex-1">
-                          联系人: {item.ccusers_name || "待录"}
+                          进线名称: {item.ccusers_name || "待录"}
                         </span>
                       </div>
                     </div>
