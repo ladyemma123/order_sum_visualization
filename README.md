@@ -37,7 +37,7 @@ npm install
 cp .env.example .env
 ```
 
-编辑 `.env` 文件，配置 MySQL 连接信息：
+编辑 `.env` 文件，配置 MySQL 连接信息和服务端口：
 
 ```env
 MYSQL_HOST=数据库IP或地址
@@ -47,6 +47,9 @@ MYSQL_PASSWORD=密码
 MYSQL_DATABASE=数据库名
 MYSQL_TABLE=数据表名
 MYSQL_USE_SSL=false
+
+# 服务端口配置，默认3000
+PORT=3000
 ```
 
 ### 4. 配置 Vite 允许外部访问（可选）
@@ -66,7 +69,7 @@ server: {
 npm run dev
 ```
 
-项目将在 `http://localhost:3000` 启动。
+项目将在 `http://localhost:PORT` 启动（PORT 为 `.env` 中配置的值，默认 3000）。
 
 ## 部署教程
 
@@ -135,9 +138,9 @@ INF Windows service Cloudflared successfully installed
 | csm | VARCHAR | CSM负责人 |
 | rpa_coach | VARCHAR | RPA教练 |
 | total_count | INT | 进线总频次 |
-| manual_count | INT | 人工介入次数 |
+| manual_count | INT | 工程师处理次数 |
 | resolved_count | INT | 有效解决数 |
-| ccusers_name | VARCHAR | 干系联系人 |
+| ccusers_name | VARCHAR | 进线名称 |
 | analysis | TEXT | 异常日志及分析摘要 |
 | start_time | DATE | 统计开始时间 |
 | end_time | DATE | 统计结束时间 |
